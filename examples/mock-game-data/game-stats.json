@@ -1,0 +1,44 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2024-01-15",
+  "characters": [
+    {
+      "id": "warrior",
+      "name": "Warrior",
+      "health": 100,
+      "attack": 15,
+      "defense": 10,
+      "special_ability": "Shield Bash"
+    },
+    {
+      "id": "mage",
+      "name": "Mage",
+      "health": 60,
+      "attack": 25,
+      "defense": 5,
+      "special_ability": "Fireball"
+    },
+    {
+      "id": "rogue",
+      "name": "Rogue",
+      "health": 70,
+      "attack": 20,
+      "defense": 8,
+      "special_ability": "Backstab"
+    }
+  ],
+  "weapons": [
+    {
+      "id": "sword",
+      "name": "Iron Sword",
+      "damage": 10,
+      "rarity": "common"
+    },
+    {
+      "id": "staff",
+      "name": "Magic Staff",
+      "damage": 8,
+      "rarity": "rare"
+    }
+  ]
+}

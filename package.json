@@ -1,0 +1,56 @@
+{
+  "name": "patchpulse",
+  "version": "1.0.0",
+  "description": "Open-Source Agentic Wiki & Repo Auto-Updater - Automatically keeps wikis and documentation updated based on changelogs",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js",
+    "lint": "eslint src --ext .ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "changelog",
+    "wiki",
+    "automation",
+    "agent",
+    "llm",
+    "discord",
+    "github"
+  ],
+  "author": "",
+  "license": "AGPL-3.0",
+  "dependencies": {
+    "@google/genai": "^0.3.0",
+    "@octokit/rest": "^21.0.1",
+    "better-sqlite3": "^12.11.1",
+    "body-parser": "^1.20.3",
+    "cheerio": "^1.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "node-cron": "^3.0.3",
+    "openai": "^4.68.4",
+    "rss-parser": "^3.13.0",
+    "turndown": "^7.1.2",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
+    "@types/body-parser": "^1.19.5",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.7.5",
+    "@types/node-cron": "^3.0.11",
+    "@types/turndown": "^5.0.5",
+    "@typescript-eslint/eslint-plugin": "^8.10.0",
+    "@typescript-eslint/parser": "^8.10.0",
+    "eslint": "^9.13.0",
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

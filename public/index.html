@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PatchPulse - Agentic Wiki & Repo Auto-Updater</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #0f172a;
+      color: #e2e8f0;
+    }
+    .card {
+      background-color: #1e293b;
+      border: 1px solid #334155;
+    }
+    .btn-primary {
+      background-color: #3b82f6;
+      color: white;
+    }
+    .btn-primary:hover {
+      background-color: #2563eb;
+    }
+    .btn-danger {
+      background-color: #ef4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background-color: #dc2626;
+    }
+    .btn-success {
+      background-color: #22c55e;
+      color: white;
+    }
+    .btn-success:hover {
+      background-color: #16a34a;
+    }
+    .status-enabled {
+      color: #22c55e;
+    }
+    .status-disabled {
+      color: #ef4444;
+    }
+    pre {
+      background-color: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 0.375rem;
+      padding: 1rem;
+      overflow-x: auto;
+    }
+    code {
+      color: #93c5fd;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <!-- Header -->
+    <header class="mb-8">
+      <h1 class="text-4xl font-bold mb-2">PatchPulse</h1>
+      <p class="text-slate-400">Agentic Wiki & Repository Auto-Updater</p>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="mb-6">
+      <div class="flex space-x-4 border-b border-slate-700 pb-2">
+        <button onclick="showTab('targets')" id="tab-targets" class="tab-btn px-4 py-2 rounded-t bg-blue-600 text-white">
+          Targets
+        </button>
+        <button onclick="showTab('patches')" id="tab-patches" class="tab-btn px-4 py-2 rounded-t hover:bg-slate-700">
+          Patches
+        </button>
+        <button onclick="showTab('logs')" id="tab-logs" class="tab-btn px-4 py-2 rounded-t hover:bg-slate-700">
+          Agent Logs
+        </button>
+      </div>
+    </nav>
+
+    <!-- Targets Tab -->
+    <div id="targets-tab" class="tab-content">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-semibold">Watched Targets</h2>
+        <button onclick="showAddTargetModal()" class="btn-primary px-4 py-2 rounded">
+          + Add Target
+        </button>
+      </div>
+
+      <div id="targets-list" class="space-y-4">
+        <!-- Targets will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Patches Tab -->
+    <div id="patches-tab" class="tab-content hidden">
+      <h2 class="text-2xl font-semibold mb-4">Recent Patch Detections</h2>
+      <div id="patches-list" class="space-y-4">
+        <!-- Patches will be loaded here -->
+      </div>
+    </div>
+
+    <!-- Logs Tab -->
+    <div id="logs-tab" class="tab-content hidden">
+      <h2 class="text-2xl font-semibold mb-4">Agent Logs</h2>
+      <div id="logs-list" class="space-y-4">
+        <!-- Logs will be loaded here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Target Modal -->
+  <div id="add-target-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+    <div class="card p-6 rounded-lg max-w-lg w-full mx-4">
+      <h3 class="text-xl font-semibold mb-4">Add New Target</h3>
+      <form id="add-target-form" onsubmit="addTarget(event)">
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-2">Name</label>
+          <input type="text" id="target-name" required class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white">
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-2">URL</label>
+          <input type="url" id="target-url" required class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white">
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-2">Adapter Type</label>
+          <select id="target-adapter" required class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white">
+            <option value="github-pr">GitHub PR</option>
+            <option value="mediawiki">MediaWiki</option>
+            <option value="discord-webhook">Discord Webhook</option>
+          </select>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-2">Adapter Config (JSON)</label>
+          <textarea id="target-config" required rows="5" class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white font-mono text-sm">{
+  "owner": "username",
+  "repo": "repository"
+}</textarea>
+        </div>
+        <div class="mb-4">
+          <label class="block text-sm font-medium mb-2">Check Interval (seconds)</label>
+          <input type="number" id="target-interval" value="3600" min="60" class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white">
+        </div>
+        <div class="flex justify-end space-x-2">
+          <button type="button" onclick="hideAddTargetModal()" class="px-4 py-2 rounded bg-slate-600 hover:bg-slate-500">
+            Cancel
+          </button>
+          <button type="submit" class="btn-primary px-4 py-2 rounded">
+            Add Target
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = '/api';
+
+    // Tab navigation
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('bg-blue-600', 'text-white');
+        el.classList.add('hover:bg-slate-700');
+      });
+
+      document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+      const activeTab = document.getElementById(`tab-${tabName}`);
+      activeTab.classList.add('bg-blue-600', 'text-white');
+      activeTab.classList.remove('hover:bg-slate-700');
+
+      // Load data for the tab
+      if (tabName === 'targets') loadTargets();
+      if (tabName === 'patches') loadPatches();
+      if (tabName === 'logs') loadLogs();
+    }
+
+    // Load targets
+    async function loadTargets() {
+      try {
+        const response = await fetch(`${API_BASE}/targets`);
+        const targets = await response.json();
+        renderTargets(targets);
+      } catch (error) {
+        console.error('Failed to load targets:', error);
+      }
+    }
+
+    function renderTargets(targets) {
+      const container = document.getElementById('targets-list');
+      if (targets.length === 0) {
+        container.innerHTML = '<p class="text-slate-400">No targets configured yet.</p>';
+        return;
+      }
+
+      container.innerHTML = targets.map(target => `
+        <div class="card p-4 rounded-lg">
+          <div class="flex justify-between items-start">
+            <div>
+              <h3 class="text-lg font-semibold">${escapeHtml(target.name)}</h3>
+              <p class="text-slate-400 text-sm mb-2">${escapeHtml(target.url)}</p>
+              <div class="flex space-x-4 text-sm">
+                <span>Adapter: <code>${escapeHtml(target.adapter_type)}</code></span>
+                <span>Interval: ${target.check_interval}s</span>
+                <span class="${target.enabled ? 'status-enabled' : 'status-disabled'}">
+                  ${target.enabled ? 'Enabled' : 'Disabled'}
+                </span>
+              </div>
+              ${target.last_check ? `<p class="text-xs text-slate-500 mt-2">Last check: ${new Date(target.last_check * 1000).toLocaleString()}</p>` : ''}
+            </div>
+            <div class="flex space-x-2">
+              <button onclick="scanTarget(${target.id})" class="btn-success px-3 py-1 rounded text-sm">
+                Scan Now
+              </button>
+              <button onclick="toggleTarget(${target.id}, ${target.enabled})" class="px-3 py-1 rounded text-sm ${target.enabled ? 'bg-slate-600 hover:bg-slate-500' : 'btn-primary'}">
+                ${target.enabled ? 'Disable' : 'Enable'}
+              </button>
+              <button onclick="deleteTarget(${target.id})" class="btn-danger px-3 py-1 rounded text-sm">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Load patches
+    async function loadPatches() {
+      try {
+        const response = await fetch(`${API_BASE}/logs/patches`);
+        const patches = await response.json();
+        renderPatches(patches);
+      } catch (error) {
+        console.error('Failed to load patches:', error);
+      }
+    }
+
+    function renderPatches(patches) {
+      const container = document.getElementById('patches-list');
+      if (patches.length === 0) {
+        container.innerHTML = '<p class="text-slate-400">No patches detected yet.</p>';
+        return;
+      }
+
+      container.innerHTML = patches.map(patch => `
+        <div class="card p-4 rounded-lg">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="text-lg font-semibold">Patch #${patch.id}</h3>
+            <span class="text-sm text-slate-400">${new Date(patch.detected_at * 1000).toLocaleString()}</span>
+          </div>
+          <div class="mb-2">
+            <span class="text-sm text-slate-400">Hash: <code class="text-xs">${patch.content_hash.substring(0, 16)}...</code></span>
+          </div>
+          <details class="mt-2">
+            <summary class="cursor-pointer text-blue-400 hover:text-blue-300">View Content</summary>
+            <pre class="mt-2 text-sm"><code>${escapeHtml(patch.markdown_content)}</code></pre>
+          </details>
+        </div>
+      `).join('');
+    }
+
+    // Load logs
+    async function loadLogs() {
+      try {
+        const response = await fetch(`${API_BASE}/logs/agent`);
+        const logs = await response.json();
+        renderLogs(logs);
+      } catch (error) {
+        console.error('Failed to load logs:', error);
+      }
+    }
+
+    function renderLogs(logs) {
+      const container = document.getElementById('logs-list');
+      if (logs.length === 0) {
+        container.innerHTML = '<p class="text-slate-400">No agent logs yet.</p>';
+        return;
+      }
+
+      container.innerHTML = logs.map(log => `
+        <div class="card p-4 rounded-lg">
+          <div class="flex justify-between items-start mb-2">
+            <h3 class="text-lg font-semibold">${escapeHtml(log.action_type)}</h3>
+            <span class="text-sm text-slate-400">${new Date(log.created_at * 1000).toLocaleString()}</span>
+          </div>
+          <div class="mb-2">
+            <span class="text-sm ${log.status === 'success' ? 'status-enabled' : 'status-disabled'}">
+              ${escapeHtml(log.status)}
+            </span>
+          </div>
+          ${log.tool_calls ? `
+            <details class="mt-2">
+              <summary class="cursor-pointer text-blue-400 hover:text-blue-300">View Tool Calls</summary>
+              <pre class="mt-2 text-sm"><code>${escapeHtml(log.tool_calls)}</code></pre>
+            </details>
+          ` : ''}
+          ${log.result ? `
+            <details class="mt-2">
+              <summary class="cursor-pointer text-blue-400 hover:text-blue-300">View Result</summary>
+              <pre class="mt-2 text-sm"><code>${escapeHtml(log.result)}</code></pre>
+            </details>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    // Add target modal
+    function showAddTargetModal() {
+      document.getElementById('add-target-modal').classList.remove('hidden');
+    }
+
+    function hideAddTargetModal() {
+      document.getElementById('add-target-modal').classList.add('hidden');
+      document.getElementById('add-target-form').reset();
+    }
+
+    async function addTarget(event) {
+      event.preventDefault();
+      const name = document.getElementById('target-name').value;
+      const url = document.getElementById('target-url').value;
+      const adapterType = document.getElementById('target-adapter').value;
+      const adapterConfig = document.getElementById('target-config').value;
+      const checkInterval = parseInt(document.getElementById('target-interval').value);
+
+      try {
+        const response = await fetch(`${API_BASE}/targets`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name,
+            url,
+            adapter_type: adapterType,
+            adapter_config: adapterConfig,
+            check_interval: checkInterval,
+          }),
+        });
+
+        if (response.ok) {
+          hideAddTargetModal();
+          loadTargets();
+        } else {
+          const error = await response.json();
+          alert(`Failed to add target: ${error.error}`);
+        }
+      } catch (error) {
+        alert(`Failed to add target: ${error.message}`);
+      }
+    }
+
+    // Target actions
+    async function scanTarget(id) {
+      try {
+        const response = await fetch(`${API_BASE}/triggers/scan/${id}`, { method: 'POST' });
+        const result = await response.json();
+        alert(result.changed ? 'Patch detected!' : 'No changes detected');
+        loadTargets();
+      } catch (error) {
+        alert(`Failed to scan target: ${error.message}`);
+      }
+    }
+
+    async function toggleTarget(id, currentEnabled) {
+      const endpoint = currentEnabled ? 'disable' : 'enable';
+      try {
+        await fetch(`${API_BASE}/targets/${id}/${endpoint}`, { method: 'POST' });
+        loadTargets();
+      } catch (error) {
+        alert(`Failed to toggle target: ${error.message}`);
+      }
+    }
+
+    async function deleteTarget(id) {
+      if (!confirm('Are you sure you want to delete this target?')) return;
+
+      try {
+        await fetch(`${API_BASE}/targets/${id}`, { method: 'DELETE' });
+        loadTargets();
+      } catch (error) {
+        alert(`Failed to delete target: ${error.message}`);
+      }
+    }
+
+    // Utility functions
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Initialize
+    loadTargets();
+  </script>
+</body>
+</html>
