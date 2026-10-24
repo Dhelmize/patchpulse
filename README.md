@@ -88,7 +88,7 @@ PatchPulse monitors game changelog/patch note URLs, detects when updates go live
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/patchpulse.git
+   git clone https://github.com/Dhelmize/patchpulse.git
    cd patchpulse
    ```
 
@@ -116,15 +116,70 @@ PatchPulse monitors game changelog/patch note URLs, detects when updates go live
 6. **Access the dashboard:**
    Open http://localhost:3000 in your browser
 
-### Docker Deployment
+## 🐳 Server Deployment (Docker & Cloudflare)
 
-```bash
-# Build and start with Docker Compose
-docker-compose up --build
+For homelab and cloud deployments, PatchPulse provides a lean, multi-arch Docker container built on top of a single Go binary with embedded web assets.
 
-# The application will be available at http://localhost:3000
-# SQLite data persists in the Docker volume
+The container natively serves the web UI and REST API on port `3000`.
+
+### Docker Compose Configuration
+
+The root `docker-compose.yml` mounts local persistent storage and connects PatchPulse directly to your Cloudflare Tunnel network:
+
+```yaml
+version: '3.8'
+
+services:
+  patchpulse:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: patchpulse
+    restart: unless-stopped
+    volumes:
+      - ./patchpulse-data:/app/data
+    environment:
+      - DB_DIR=/app/data
+    networks:
+      - cloudflare_network
+
+networks:
+  cloudflare_network:
+    external: true
 ```
+
+#### Starting the Service
+
+1. Ensure your external `cloudflare_network` exists:
+   ```bash
+   docker network create cloudflare_network
+   ```
+
+2. Start the container:
+   ```bash
+   docker compose up -d --build
+   ```
+
+Data persists locally in `./patchpulse-data/patchpulse.db` across container rebuilds and updates.
+
+### Secure External Access via Cloudflare Tunnel
+
+The safest and recommended deployment method is connecting the PatchPulse container to a Cloudflare Tunnel network (`cloudflare_network`).
+
+By routing a Public Hostname directly to `http://patchpulse:3000` within the Cloudflare Zero Trust dashboard:
+- **No Open Ports**: You do not need to open inbound firewall ports or configure port forwarding on your router.
+- **Zero IP Exposure**: Your public home or server IP address is never revealed to the internet.
+- **Automatic HTTPS**: Cloudflare handles SSL/TLS termination, DDoS mitigation, and edge routing automatically.
+- **Access Policies**: You can optionally add Cloudflare Access policies (OAuth, email verification, passkeys) in front of the dashboard.
+
+#### Cloudflare Zero Trust Setup
+1. In the **Cloudflare Zero Trust** dashboard, navigate to **Networks > Tunnels**.
+2. Select your active tunnel and open the **Public Hostnames** tab.
+3. Click **Add a public hostname**:
+   - **Subdomain / Domain**: e.g., `patchpulse.nihil.fyi`
+   - **Service Type**: `HTTP`
+   - **URL**: `patchpulse:3000`
+4. Save the hostname. Your dashboard will immediately be accessible securely over HTTPS at `https://patchpulse.nihil.fyi`.
 
 ## 📖 Usage
 
@@ -134,8 +189,8 @@ docker-compose up --build
 2. Click "Add Target"
 3. Fill in the required fields:
    - **Name**: Descriptive name for the target
-   - **URL**: Changelog/patch notes URL to monitor
-   - **Adapter Type**: Choose from GitHub PR, MediaWiki, or Discord Webhook
+   - **URL**: Changelog/patch notes URL or Discord Channel ID to monitor
+   - **Adapter Type**: Choose from GitHub PR, MediaWiki, Discord Webhook, or Local Directory
    - **Adapter Config**: JSON configuration for the adapter (see examples below)
    - **Check Interval**: How often to check for updates (in seconds)
 
@@ -144,26 +199,26 @@ docker-compose up --build
 #### GitHub PR Adapter
 ```json
 {
-  "owner": "your-username",
-  "repo": "your-repo",
+  "owner": "Dhelmize",
+  "repo": "patchpulse",
   "branch": "main",
-  "token": "ghp_xxxxxxxxxxxx"
+  "token": ""
 }
 ```
 
 #### MediaWiki Adapter
 ```json
 {
-  "apiUrl": "https://wiki.example.com/api.php",
-  "username": "your-username",
-  "password": "your-password"
+  "apiUrl": "",
+  "username": "",
+  "password": ""
 }
 ```
 
 #### Discord Webhook Adapter
 ```json
 {
-  "webhookUrl": "https://discord.com/api/webhooks/xxxxxxxx/xxxxxxxx"
+  "webhookUrl": ""
 }
 ```
 
@@ -346,9 +401,9 @@ This project is licensed under the GNU Affero General Public License v3.0 - see 
 
 ## 📞 Support
 
-- 📖 [Documentation](https://github.com/yourusername/patchpulse/wiki)
-- 🐛 [Issue Tracker](https://github.com/yourusername/patchpulse/issues)
-- 💬 [Discussions](https://github.com/yourusername/patchpulse/discussions)
+- 📖 [Documentation](https://github.com/Dhelmize/patchpulse/wiki)
+- 🐛 [Issue Tracker](https://github.com/Dhelmize/patchpulse/issues)
+- 💬 [Discussions](https://github.com/Dhelmize/patchpulse/discussions)
 
 ---
 

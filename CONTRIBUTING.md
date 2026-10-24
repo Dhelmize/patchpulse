@@ -25,7 +25,7 @@ Thank you for your interest in contributing to PatchPulse! This guide will help 
 
 1. **Fork and clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/patchpulse.git
+   git clone https://github.com/Dhelmize/patchpulse.git
    cd patchpulse
    ```
 

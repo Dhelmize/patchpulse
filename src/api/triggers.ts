@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Copyright (C) 2024 PatchPulse Contributors
  *
  * This program is free software: you can redistribute it and/or modify
@@ -57,7 +57,7 @@ triggersRouter.post('/test', async (req, res) => {
     // Simulate a detection with mock data
     res.json({
       message: 'Test mode - mock detection',
-      mock_url: mock_url || 'https://example.com/mock',
+      mock_url: mock_url || '',
       mock_content_length: mock_content.length,
       timestamp: new Date().toISOString(),
     });

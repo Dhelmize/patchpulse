@@ -205,6 +205,10 @@
             class="tab-btn relative px-4 py-4 text-[13px] font-medium text-text-tertiary hover:text-text-secondary transition-colors">
             Agent Logs
           </button>
+          <button onclick="showTab('settings')" id="tab-settings"
+            class="tab-btn relative px-4 py-4 text-[13px] font-medium text-text-tertiary hover:text-text-secondary transition-colors">
+            Settings
+          </button>
         </nav>
 
         <!-- Status Badge -->
@@ -266,6 +270,101 @@
       <div id="logs-list"></div>
     </div>
 
+    <!-- ==================== SETTINGS TAB ==================== -->
+    <div id="settings-tab" class="tab-content hidden">
+      <div class="mb-8">
+        <h1 class="text-[22px] font-semibold text-text-primary tracking-tight">Settings</h1>
+        <p class="text-[13px] text-text-tertiary mt-1">Configure global LLM credentials and integration tokens stored securely in your local database</p>
+      </div>
+
+      <div class="max-w-2xl rounded-xl border border-border-subtle bg-surface-1 p-6">
+        <form id="settings-form" onsubmit="saveSettings(event)" class="space-y-6">
+
+          <!-- LLM Configuration Section -->
+          <div>
+            <h2 class="text-[14px] font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <svg class="w-4 h-4 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+              </svg>
+              LLM Configuration
+            </h2>
+
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">LLM Provider</label>
+                <select id="setting-llm-provider"
+                  class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-2 border border-border-default text-text-primary transition-all appearance-none cursor-pointer">
+                  <option value="gemini">Google Gemini</option>
+                  <option value="openai">OpenAI</option>
+                  <option value="openai-compatible">OpenAI-Compatible</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">LLM Model</label>
+                <input type="text" id="setting-llm-model" placeholder=""
+                  class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-2 border border-border-default text-text-primary font-mono transition-all">
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">LLM API Key</label>
+              <input type="password" id="setting-llm-api-key" placeholder=""
+                class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-2 border border-border-default text-text-primary font-mono transition-all">
+              <p class="text-[11px] text-text-tertiary mt-1.5">Your API key is stored locally in SQLite and takes precedence over environment variables.</p>
+            </div>
+
+            <div>
+              <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">LLM Base URL (Optional)</label>
+              <input type="text" id="setting-llm-base-url" placeholder=""
+                class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-2 border border-border-default text-text-primary font-mono transition-all">
+            </div>
+          </div>
+
+          <!-- Integrations Section -->
+          <div class="border-t border-border-subtle pt-6">
+            <h2 class="text-[14px] font-semibold text-text-primary mb-4 flex items-center gap-2">
+              <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+              </svg>
+              Integration Tokens & Access
+            </h2>
+
+            <div class="space-y-4">
+              <div>
+                <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">GitHub Token</label>
+                <input type="password" id="setting-github-token" placeholder=""
+                  class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-2 border border-border-default text-text-primary font-mono transition-all">
+                <p class="text-[11px] text-text-tertiary mt-1.5">Personal access token with repo scope for creating pull requests.</p>
+              </div>
+
+              <div>
+                <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">Discord Bot Token</label>
+                <input type="password" id="setting-discord-bot-token" placeholder=""
+                  class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-2 border border-border-default text-text-primary font-mono transition-all">
+                <p class="text-[11px] text-text-tertiary mt-1.5">Bot token for monitoring Discord update channels.</p>
+              </div>
+
+              <div>
+                <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">Discord Webhook URL</label>
+                <input type="text" id="setting-discord-webhook-url" placeholder=""
+                  class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-2 border border-border-default text-text-primary font-mono transition-all">
+                <p class="text-[11px] text-text-tertiary mt-1.5">Default webhook URL for automated update notifications.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-end gap-3 pt-4 border-t border-border-subtle">
+            <button type="submit"
+              class="btn-glow relative z-10 px-6 py-2.5 bg-accent-blue hover:bg-blue-600 text-white text-[13px] font-medium rounded-lg transition-colors">
+              Save Settings
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
   </main>
 
   <!-- ==================== ADD TARGET MODAL ==================== -->
@@ -297,20 +396,32 @@
               class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-1 border border-border-default text-text-primary placeholder:text-text-tertiary transition-all">
           </div>
 
-          <div>
-            <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">URL</label>
-            <input type="url" id="target-url" required placeholder="https://example.com/patch-notes"
-              class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-1 border border-border-default text-text-primary font-mono placeholder:text-text-tertiary placeholder:font-sans transition-all">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">Source Type</label>
+              <select id="target-source-type" onchange="onSourceTypeChange()" required
+                class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-1 border border-border-default text-text-primary transition-all appearance-none cursor-pointer">
+                <option value="web">Web Page</option>
+                <option value="rss">RSS Feed</option>
+                <option value="discord-channel">Discord Channel</option>
+              </select>
+            </div>
+            <div>
+              <label id="target-url-label" class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">Source Target (URL)</label>
+              <input type="text" id="target-url" required placeholder=""
+                class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-1 border border-border-default text-text-primary font-mono transition-all">
+            </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">Adapter</label>
-              <select id="target-adapter" required
+              <select id="target-adapter" onchange="onAdapterTypeChange()" required
                 class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-1 border border-border-default text-text-primary transition-all appearance-none cursor-pointer">
                 <option value="github-pr">GitHub PR</option>
                 <option value="mediawiki">MediaWiki</option>
                 <option value="discord-webhook">Discord Webhook</option>
+                <option value="local-dir">Local Directory</option>
               </select>
             </div>
             <div>
@@ -322,10 +433,10 @@
 
           <div>
             <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">Adapter Config</label>
-            <textarea id="target-config" required rows="4" placeholder='{ "owner": "user", "repo": "repo" }'
-              class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-1 border border-border-default text-accent-glow font-mono placeholder:text-text-tertiary transition-all resize-none">{
-  "owner": "username",
-  "repo": "repository"
+            <textarea id="target-config" required rows="4" placeholder=""
+              class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-1 border border-border-default text-accent-glow font-mono transition-all resize-none">{
+  "owner": "Dhelmize",
+  "repo": "patchpulse"
 }</textarea>
           </div>
 
@@ -414,6 +525,7 @@
       if (tabName === 'targets') loadTargets();
       if (tabName === 'patches') loadPatches();
       if (tabName === 'logs')    loadLogs();
+      if (tabName === 'settings') loadSettings();
     }
 
     /* ============================================================
@@ -452,6 +564,7 @@
             <thead>
               <tr class="border-b border-border-subtle bg-surface-1">
                 <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Target</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Source</th>
                 <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Adapter</th>
                 <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Interval</th>
                 <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Status</th>
@@ -467,6 +580,11 @@
                       <span class="text-[13px] font-medium text-text-primary">${escapeHtml(t.name)}</span>
                       <span class="text-[11px] text-text-tertiary font-mono mt-0.5 truncate max-w-[280px]">${escapeHtml(t.url)}</span>
                     </div>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-surface-3 text-text-secondary border border-border-subtle">
+                      ${escapeHtml(t.source_type || 'web')}
+                    </span>
                   </td>
                   <td class="px-4 py-3.5">
                     <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-surface-3 text-text-secondary border border-border-subtle">
@@ -677,6 +795,36 @@
     /* ============================================================
        MODAL
     ============================================================ */
+    function onSourceTypeChange() {
+      const srcType = document.getElementById('target-source-type').value;
+      const label = document.getElementById('target-url-label');
+      const input = document.getElementById('target-url');
+      if (srcType === 'discord-channel') {
+        label.textContent = 'Channel ID';
+        input.placeholder = '';
+      } else if (srcType === 'rss') {
+        label.textContent = 'RSS Feed URL';
+        input.placeholder = '';
+      } else {
+        label.textContent = 'Source Target (URL)';
+        input.placeholder = '';
+      }
+    }
+
+    function onAdapterTypeChange() {
+      const adpType = document.getElementById('target-adapter').value;
+      const config = document.getElementById('target-config');
+      if (adpType === 'github-pr') {
+        config.value = '{\n  "owner": "Dhelmize",\n  "repo": "patchpulse"\n}';
+      } else if (adpType === 'mediawiki') {
+        config.value = '{\n  "api_url": ""\n}';
+      } else if (adpType === 'discord-webhook') {
+        config.value = '{\n  "webhook_url": ""\n}';
+      } else if (adpType === 'local-dir') {
+        config.value = '{\n  "directory": "./"\n}';
+      }
+    }
+
     function showAddTargetModal() {
       document.getElementById('add-target-modal').classList.remove('hidden');
       document.body.style.overflow = 'hidden';
@@ -687,8 +835,8 @@
       document.getElementById('add-target-modal').classList.add('hidden');
       document.body.style.overflow = '';
       document.getElementById('add-target-form').reset();
-      // Restore default config placeholder
-      document.getElementById('target-config').value = '{\n  "owner": "username",\n  "repo": "repository"\n}';
+      document.getElementById('target-config').value = '{\n  "owner": "Dhelmize",\n  "repo": "patchpulse"\n}';
+      onSourceTypeChange();
     }
 
     /* ============================================================
@@ -697,10 +845,15 @@
     async function addTarget(event) {
       event.preventDefault();
       const name = document.getElementById('target-name').value;
+      const sourceType = document.getElementById('target-source-type').value;
       const url = document.getElementById('target-url').value;
       const adapterType = document.getElementById('target-adapter').value;
       const adapterConfig = document.getElementById('target-config').value;
       const checkInterval = parseInt(document.getElementById('target-interval').value);
+
+      const sourceConfigObj = sourceType === 'discord-channel' 
+        ? { channel_id: url } 
+        : { url: url };
 
       try {
         const response = await fetch(`${API_BASE}/targets`, {
@@ -709,6 +862,8 @@
           body: JSON.stringify({
             name,
             url,
+            source_type: sourceType,
+            source_config: JSON.stringify(sourceConfigObj),
             adapter_type: adapterType,
             adapter_config: adapterConfig,
             check_interval: checkInterval,
@@ -767,6 +922,55 @@
     }
 
     /* ============================================================
+       SETTINGS
+    ============================================================ */
+    async function loadSettings() {
+      try {
+        const res = await fetch(`${API_BASE}/settings`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.LLM_PROVIDER) document.getElementById('setting-llm-provider').value = data.LLM_PROVIDER;
+        if (data.LLM_API_KEY) document.getElementById('setting-llm-api-key').value = data.LLM_API_KEY;
+        if (data.LLM_MODEL) document.getElementById('setting-llm-model').value = data.LLM_MODEL;
+        if (data.LLM_BASE_URL) document.getElementById('setting-llm-base-url').value = data.LLM_BASE_URL;
+        if (data.GITHUB_TOKEN) document.getElementById('setting-github-token').value = data.GITHUB_TOKEN;
+        if (data.DISCORD_BOT_TOKEN) document.getElementById('setting-discord-bot-token').value = data.DISCORD_BOT_TOKEN;
+        if (data.DISCORD_WEBHOOK_URL) document.getElementById('setting-discord-webhook-url').value = data.DISCORD_WEBHOOK_URL;
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    }
+
+    async function saveSettings(event) {
+      event.preventDefault();
+      const payload = {
+        LLM_PROVIDER: document.getElementById('setting-llm-provider').value,
+        LLM_API_KEY: document.getElementById('setting-llm-api-key').value,
+        LLM_MODEL: document.getElementById('setting-llm-model').value,
+        LLM_BASE_URL: document.getElementById('setting-llm-base-url').value,
+        GITHUB_TOKEN: document.getElementById('setting-github-token').value,
+        DISCORD_BOT_TOKEN: document.getElementById('setting-discord-bot-token').value,
+        DISCORD_WEBHOOK_URL: document.getElementById('setting-discord-webhook-url').value,
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/settings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          showToast('Settings saved successfully', 'success');
+        } else {
+          const err = await res.json();
+          showToast(`Failed to save settings: ${err.error}`, 'error');
+        }
+      } catch (err) {
+        showToast(`Failed to save settings: ${err.message}`, 'error');
+      }
+    }
+
+    /* ============================================================
        KEYBOARD SHORTCUTS
     ============================================================ */
     document.addEventListener('keydown', (e) => {
@@ -780,6 +984,7 @@
        INIT
     ============================================================ */
     loadTargets();
+    loadSettings();
   </script>
 </body>
 </html>
