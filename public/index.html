@@ -1,179 +1,424 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PatchPulse - Agentic Wiki & Repo Auto-Updater</title>
+  <title>PatchPulse</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            surface: {
+              0: '#09090b',
+              1: '#0c0c0e',
+              2: '#111113',
+              3: '#18181b',
+              4: '#1f1f23',
+            },
+            border: {
+              subtle: 'rgba(255,255,255,0.06)',
+              default: 'rgba(255,255,255,0.10)',
+              strong: 'rgba(255,255,255,0.16)',
+            },
+            text: {
+              primary: '#fafafa',
+              secondary: '#a1a1aa',
+              tertiary: '#52525b',
+            },
+            accent: {
+              blue: '#3b82f6',
+              glow: '#60a5fa',
+            }
+          },
+          animation: {
+            'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'fade-in': 'fadeIn 0.3s ease-out',
+            'slide-up': 'slideUp 0.3s ease-out',
+            'glow': 'glow 2s ease-in-out infinite alternate',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
+            },
+            slideUp: {
+              '0%': { opacity: '0', transform: 'translateY(8px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            glow: {
+              '0%': { boxShadow: '0 0 5px rgba(59,130,246,0.3), 0 0 20px rgba(59,130,246,0.1)' },
+              '100%': { boxShadow: '0 0 10px rgba(59,130,246,0.5), 0 0 40px rgba(59,130,246,0.2)' },
+            },
+          }
+        }
+      }
+    }
+  </script>
   <style>
+    * { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
     body {
-      background-color: #0f172a;
-      color: #e2e8f0;
+      background-color: #09090b;
+      color: #fafafa;
+      font-family: 'Inter', system-ui, sans-serif;
     }
-    .card {
-      background-color: #1e293b;
-      border: 1px solid #334155;
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 3px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.15); }
+
+    /* Status dot pulse */
+    @keyframes dotPulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 currentColor; }
+      50% { opacity: 0.6; box-shadow: 0 0 0 4px transparent; }
     }
-    .btn-primary {
-      background-color: #3b82f6;
-      color: white;
+    .dot-pulse { animation: dotPulse 2s ease-in-out infinite; }
+
+    /* Glow button */
+    .btn-glow {
+      position: relative;
+      transition: all 0.2s ease;
     }
-    .btn-primary:hover {
-      background-color: #2563eb;
+    .btn-glow::after {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(59,130,246,0.4), rgba(96,165,250,0.2));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: -1;
+      filter: blur(8px);
     }
-    .btn-danger {
-      background-color: #ef4444;
-      color: white;
+    .btn-glow:hover::after { opacity: 1; }
+
+    /* Glass modal */
+    .glass {
+      background: rgba(17,17,19,0.85);
+      backdrop-filter: blur(24px) saturate(150%);
+      -webkit-backdrop-filter: blur(24px) saturate(150%);
     }
-    .btn-danger:hover {
-      background-color: #dc2626;
+
+    /* Table row transitions */
+    .table-row {
+      transition: background-color 0.15s ease, transform 0.15s ease;
     }
-    .btn-success {
-      background-color: #22c55e;
-      color: white;
+    .table-row:hover {
+      background-color: rgba(255,255,255,0.03);
     }
-    .btn-success:hover {
-      background-color: #16a34a;
+
+    /* Details marker */
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    details > summary::before {
+      content: '▸';
+      display: inline-block;
+      margin-right: 6px;
+      transition: transform 0.15s ease;
+      color: #52525b;
+      font-size: 0.75rem;
     }
-    .status-enabled {
-      color: #22c55e;
+    details[open] > summary::before {
+      transform: rotate(90deg);
     }
-    .status-disabled {
-      color: #ef4444;
+
+    /* Fade-in for tab content */
+    .tab-content { animation: fadeIn 0.25s ease-out; }
+
+    /* Noise texture overlay */
+    .noise::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      opacity: 0.015;
+      pointer-events: none;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      z-index: 9999;
     }
-    pre {
-      background-color: #0f172a;
-      border: 1px solid #334155;
-      border-radius: 0.375rem;
-      padding: 1rem;
-      overflow-x: auto;
+
+    /* Mono numeric */
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Input focus ring */
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: rgba(59,130,246,0.5) !important;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
     }
-    code {
-      color: #93c5fd;
+
+    /* Empty state */
+    .empty-state {
+      border: 1px dashed rgba(255,255,255,0.08);
+    }
+
+    /* Toast */
+    .toast {
+      animation: slideUp 0.3s ease-out, fadeOut 0.3s ease-in 2.7s forwards;
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; transform: translateY(-4px); }
     }
   </style>
 </head>
-<body class="min-h-screen">
-  <div class="container mx-auto px-4 py-8">
-    <!-- Header -->
-    <header class="mb-8">
-      <h1 class="text-4xl font-bold mb-2">PatchPulse</h1>
-      <p class="text-slate-400">Agentic Wiki & Repository Auto-Updater</p>
-    </header>
 
-    <!-- Navigation Tabs -->
-    <nav class="mb-6">
-      <div class="flex space-x-4 border-b border-slate-700 pb-2">
-        <button onclick="showTab('targets')" id="tab-targets" class="tab-btn px-4 py-2 rounded-t bg-blue-600 text-white">
-          Targets
-        </button>
-        <button onclick="showTab('patches')" id="tab-patches" class="tab-btn px-4 py-2 rounded-t hover:bg-slate-700">
-          Patches
-        </button>
-        <button onclick="showTab('logs')" id="tab-logs" class="tab-btn px-4 py-2 rounded-t hover:bg-slate-700">
-          Agent Logs
-        </button>
+<body class="noise min-h-screen">
+
+  <!-- Top Navigation -->
+  <header class="sticky top-0 z-40 border-b border-border-subtle" style="background: rgba(9,9,11,0.8); backdrop-filter: blur(12px);">
+    <div class="max-w-[1440px] mx-auto px-6">
+      <div class="flex items-center justify-between h-14">
+
+        <!-- Logo & Brand -->
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-accent-blue dot-pulse"></div>
+            <span class="text-[15px] font-semibold tracking-tight text-text-primary">PatchPulse</span>
+          </div>
+          <div class="h-4 w-px bg-border-subtle"></div>
+          <span class="text-xs text-text-tertiary font-medium">v1.0.0</span>
+        </div>
+
+        <!-- Nav Tabs -->
+        <nav class="flex items-center">
+          <button onclick="showTab('targets')" id="tab-targets"
+            class="tab-btn relative px-4 py-4 text-[13px] font-medium text-text-primary transition-colors">
+            Targets
+            <span class="tab-indicator absolute bottom-0 left-0 right-0 h-px bg-text-primary"></span>
+          </button>
+          <button onclick="showTab('patches')" id="tab-patches"
+            class="tab-btn relative px-4 py-4 text-[13px] font-medium text-text-tertiary hover:text-text-secondary transition-colors">
+            Patches
+          </button>
+          <button onclick="showTab('logs')" id="tab-logs"
+            class="tab-btn relative px-4 py-4 text-[13px] font-medium text-text-tertiary hover:text-text-secondary transition-colors">
+            Agent Logs
+          </button>
+        </nav>
+
+        <!-- Status Badge -->
+        <div class="flex items-center gap-3">
+          <div class="flex items-center gap-2 px-3 py-1.5 rounded-full border border-border-subtle bg-surface-2">
+            <div class="w-1.5 h-1.5 rounded-full bg-emerald-400 dot-pulse"></div>
+            <span class="text-[11px] font-medium text-emerald-400 uppercase tracking-wider">Watcher Active</span>
+          </div>
+        </div>
       </div>
-    </nav>
+    </div>
+  </header>
 
-    <!-- Targets Tab -->
+  <!-- Main Content -->
+  <main class="max-w-[1440px] mx-auto px-6 py-8">
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed top-20 right-6 z-50 flex flex-col gap-2"></div>
+
+    <!-- ==================== TARGETS TAB ==================== -->
     <div id="targets-tab" class="tab-content">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-semibold">Watched Targets</h2>
-        <button onclick="showAddTargetModal()" class="btn-primary px-4 py-2 rounded">
-          + Add Target
+
+      <!-- Page Header -->
+      <div class="flex items-center justify-between mb-8">
+        <div>
+          <h1 class="text-[22px] font-semibold text-text-primary tracking-tight">Watched Targets</h1>
+          <p class="text-[13px] text-text-tertiary mt-1">Monitoring endpoints for changelog and patch note changes</p>
+        </div>
+        <button onclick="showAddTargetModal()"
+          class="btn-glow relative z-10 flex items-center gap-2 px-4 py-2 bg-accent-blue hover:bg-blue-600 text-white text-[13px] font-medium rounded-lg transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+          </svg>
+          Add Target
         </button>
       </div>
 
-      <div id="targets-list" class="space-y-4">
-        <!-- Targets will be loaded here -->
+      <!-- Targets Table -->
+      <div id="targets-list">
+        <!-- populated by JS -->
       </div>
     </div>
 
-    <!-- Patches Tab -->
+    <!-- ==================== PATCHES TAB ==================== -->
     <div id="patches-tab" class="tab-content hidden">
-      <h2 class="text-2xl font-semibold mb-4">Recent Patch Detections</h2>
-      <div id="patches-list" class="space-y-4">
-        <!-- Patches will be loaded here -->
+      <div class="mb-8">
+        <h1 class="text-[22px] font-semibold text-text-primary tracking-tight">Patch Detections</h1>
+        <p class="text-[13px] text-text-tertiary mt-1">Content changes detected across monitored targets</p>
       </div>
+      <div id="patches-list"></div>
     </div>
 
-    <!-- Logs Tab -->
+    <!-- ==================== LOGS TAB ==================== -->
     <div id="logs-tab" class="tab-content hidden">
-      <h2 class="text-2xl font-semibold mb-4">Agent Logs</h2>
-      <div id="logs-list" class="space-y-4">
-        <!-- Logs will be loaded here -->
+      <div class="mb-8">
+        <h1 class="text-[22px] font-semibold text-text-primary tracking-tight">Agent Logs</h1>
+        <p class="text-[13px] text-text-tertiary mt-1">LLM agent execution history and tool calls</p>
       </div>
+      <div id="logs-list"></div>
     </div>
-  </div>
 
-  <!-- Add Target Modal -->
-  <div id="add-target-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-    <div class="card p-6 rounded-lg max-w-lg w-full mx-4">
-      <h3 class="text-xl font-semibold mb-4">Add New Target</h3>
-      <form id="add-target-form" onsubmit="addTarget(event)">
-        <div class="mb-4">
-          <label class="block text-sm font-medium mb-2">Name</label>
-          <input type="text" id="target-name" required class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white">
+  </main>
+
+  <!-- ==================== ADD TARGET MODAL ==================== -->
+  <div id="add-target-modal" class="fixed inset-0 z-50 hidden">
+    <!-- Backdrop -->
+    <div onclick="hideAddTargetModal()" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+
+    <!-- Modal Card -->
+    <div class="relative flex items-center justify-center min-h-screen p-4">
+      <div class="glass relative w-full max-w-lg rounded-xl border border-border-default shadow-2xl animate-slide-up">
+
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-border-subtle">
+          <h3 class="text-[15px] font-semibold text-text-primary">New Target</h3>
+          <button onclick="hideAddTargetModal()"
+            class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-surface-4 text-text-tertiary hover:text-text-secondary transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
         </div>
-        <div class="mb-4">
-          <label class="block text-sm font-medium mb-2">URL</label>
-          <input type="url" id="target-url" required class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white">
-        </div>
-        <div class="mb-4">
-          <label class="block text-sm font-medium mb-2">Adapter Type</label>
-          <select id="target-adapter" required class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white">
-            <option value="github-pr">GitHub PR</option>
-            <option value="mediawiki">MediaWiki</option>
-            <option value="discord-webhook">Discord Webhook</option>
-          </select>
-        </div>
-        <div class="mb-4">
-          <label class="block text-sm font-medium mb-2">Adapter Config (JSON)</label>
-          <textarea id="target-config" required rows="5" class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white font-mono text-sm">{
+
+        <!-- Modal Body -->
+        <form id="add-target-form" onsubmit="addTarget(event)" class="px-6 py-5 space-y-5">
+
+          <div>
+            <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">Name</label>
+            <input type="text" id="target-name" required placeholder="e.g. League of Legends Patch Notes"
+              class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-1 border border-border-default text-text-primary placeholder:text-text-tertiary transition-all">
+          </div>
+
+          <div>
+            <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">URL</label>
+            <input type="url" id="target-url" required placeholder="https://example.com/patch-notes"
+              class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-1 border border-border-default text-text-primary font-mono placeholder:text-text-tertiary placeholder:font-sans transition-all">
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">Adapter</label>
+              <select id="target-adapter" required
+                class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-1 border border-border-default text-text-primary transition-all appearance-none cursor-pointer">
+                <option value="github-pr">GitHub PR</option>
+                <option value="mediawiki">MediaWiki</option>
+                <option value="discord-webhook">Discord Webhook</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">Interval (s)</label>
+              <input type="number" id="target-interval" value="3600" min="60"
+                class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-1 border border-border-default text-text-primary font-mono transition-all">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[12px] font-medium text-text-secondary uppercase tracking-wider mb-2">Adapter Config</label>
+            <textarea id="target-config" required rows="4" placeholder='{ "owner": "user", "repo": "repo" }'
+              class="w-full px-3 py-2.5 text-[13px] rounded-lg bg-surface-1 border border-border-default text-accent-glow font-mono placeholder:text-text-tertiary transition-all resize-none">{
   "owner": "username",
   "repo": "repository"
 }</textarea>
-        </div>
-        <div class="mb-4">
-          <label class="block text-sm font-medium mb-2">Check Interval (seconds)</label>
-          <input type="number" id="target-interval" value="3600" min="60" class="w-full p-2 rounded bg-slate-800 border border-slate-600 text-white">
-        </div>
-        <div class="flex justify-end space-x-2">
-          <button type="button" onclick="hideAddTargetModal()" class="px-4 py-2 rounded bg-slate-600 hover:bg-slate-500">
-            Cancel
-          </button>
-          <button type="submit" class="btn-primary px-4 py-2 rounded">
-            Add Target
-          </button>
-        </div>
-      </form>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button type="button" onclick="hideAddTargetModal()"
+              class="px-4 py-2 text-[13px] font-medium text-text-secondary rounded-lg border border-border-default hover:bg-surface-3 transition-colors">
+              Cancel
+            </button>
+            <button type="submit"
+              class="btn-glow relative z-10 px-5 py-2 bg-accent-blue hover:bg-blue-600 text-white text-[13px] font-medium rounded-lg transition-colors">
+              Create Target
+            </button>
+          </div>
+
+        </form>
+      </div>
     </div>
   </div>
+
 
   <script>
     const API_BASE = '/api';
 
-    // Tab navigation
-    function showTab(tabName) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.tab-btn').forEach(el => {
-        el.classList.remove('bg-blue-600', 'text-white');
-        el.classList.add('hover:bg-slate-700');
-      });
-
-      document.getElementById(`${tabName}-tab`).classList.remove('hidden');
-      const activeTab = document.getElementById(`tab-${tabName}`);
-      activeTab.classList.add('bg-blue-600', 'text-white');
-      activeTab.classList.remove('hover:bg-slate-700');
-
-      // Load data for the tab
-      if (tabName === 'targets') loadTargets();
-      if (tabName === 'patches') loadPatches();
-      if (tabName === 'logs') loadLogs();
+    /* ============================================================
+       UTILITY
+    ============================================================ */
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = String(text);
+      return div.innerHTML;
     }
 
-    // Load targets
+    function relativeTime(epoch) {
+      if (!epoch) return '—';
+      const diff = Math.floor(Date.now() / 1000) - epoch;
+      if (diff < 60)   return `${diff}s ago`;
+      if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+      return `${Math.floor(diff / 86400)}d ago`;
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const colors = {
+        success: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+        error:   'border-red-500/30 bg-red-500/10 text-red-400',
+        info:    'border-blue-500/30 bg-blue-500/10 text-blue-400',
+      };
+      const el = document.createElement('div');
+      el.className = `toast flex items-center gap-2 px-4 py-2.5 rounded-lg border text-[13px] font-medium ${colors[type] || colors.info}`;
+      el.innerHTML = `
+        <div class="w-1.5 h-1.5 rounded-full ${type === 'success' ? 'bg-emerald-400' : type === 'error' ? 'bg-red-400' : 'bg-blue-400'}"></div>
+        ${escapeHtml(message)}`;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+
+    /* ============================================================
+       TAB NAVIGATION
+    ============================================================ */
+    function showTab(tabName) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('text-text-primary');
+        btn.classList.add('text-text-tertiary');
+        const indicator = btn.querySelector('.tab-indicator');
+        if (indicator) indicator.remove();
+      });
+
+      const panel = document.getElementById(`${tabName}-tab`);
+      panel.classList.remove('hidden');
+      // Re-trigger animation
+      panel.style.animation = 'none';
+      panel.offsetHeight;
+      panel.style.animation = '';
+
+      const activeBtn = document.getElementById(`tab-${tabName}`);
+      activeBtn.classList.remove('text-text-tertiary');
+      activeBtn.classList.add('text-text-primary');
+      const indicator = document.createElement('span');
+      indicator.className = 'tab-indicator absolute bottom-0 left-0 right-0 h-px bg-text-primary';
+      activeBtn.appendChild(indicator);
+
+      if (tabName === 'targets') loadTargets();
+      if (tabName === 'patches') loadPatches();
+      if (tabName === 'logs')    loadLogs();
+    }
+
+    /* ============================================================
+       TARGETS
+    ============================================================ */
     async function loadTargets() {
       try {
         const response = await fetch(`${API_BASE}/targets`);
@@ -186,43 +431,95 @@
 
     function renderTargets(targets) {
       const container = document.getElementById('targets-list');
-      if (targets.length === 0) {
-        container.innerHTML = '<p class="text-slate-400">No targets configured yet.</p>';
+
+      if (!targets || targets.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state flex flex-col items-center justify-center py-20 rounded-xl">
+            <div class="w-10 h-10 rounded-full bg-surface-3 flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+              </svg>
+            </div>
+            <p class="text-[13px] text-text-tertiary mb-1">No targets configured</p>
+            <p class="text-[12px] text-text-tertiary/60">Add a target to begin monitoring patch notes</p>
+          </div>`;
         return;
       }
 
-      container.innerHTML = targets.map(target => `
-        <div class="card p-4 rounded-lg">
-          <div class="flex justify-between items-start">
-            <div>
-              <h3 class="text-lg font-semibold">${escapeHtml(target.name)}</h3>
-              <p class="text-slate-400 text-sm mb-2">${escapeHtml(target.url)}</p>
-              <div class="flex space-x-4 text-sm">
-                <span>Adapter: <code>${escapeHtml(target.adapter_type)}</code></span>
-                <span>Interval: ${target.check_interval}s</span>
-                <span class="${target.enabled ? 'status-enabled' : 'status-disabled'}">
-                  ${target.enabled ? 'Enabled' : 'Disabled'}
-                </span>
-              </div>
-              ${target.last_check ? `<p class="text-xs text-slate-500 mt-2">Last check: ${new Date(target.last_check * 1000).toLocaleString()}</p>` : ''}
-            </div>
-            <div class="flex space-x-2">
-              <button onclick="scanTarget(${target.id})" class="btn-success px-3 py-1 rounded text-sm">
-                Scan Now
-              </button>
-              <button onclick="toggleTarget(${target.id}, ${target.enabled})" class="px-3 py-1 rounded text-sm ${target.enabled ? 'bg-slate-600 hover:bg-slate-500' : 'btn-primary'}">
-                ${target.enabled ? 'Disable' : 'Enable'}
-              </button>
-              <button onclick="deleteTarget(${target.id})" class="btn-danger px-3 py-1 rounded text-sm">
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      `).join('');
+      container.innerHTML = `
+        <div class="rounded-xl border border-border-subtle overflow-hidden">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-border-subtle bg-surface-1">
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Target</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Adapter</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Interval</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Status</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Last Check</th>
+                <th class="text-right text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border-subtle">
+              ${targets.map(t => `
+                <tr class="table-row group">
+                  <td class="px-4 py-3.5">
+                    <div class="flex flex-col">
+                      <span class="text-[13px] font-medium text-text-primary">${escapeHtml(t.name)}</span>
+                      <span class="text-[11px] text-text-tertiary font-mono mt-0.5 truncate max-w-[280px]">${escapeHtml(t.url)}</span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-surface-3 text-text-secondary border border-border-subtle">
+                      ${escapeHtml(t.adapter_type)}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <span class="text-[13px] font-mono text-text-secondary">${t.check_interval}s</span>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <div class="flex items-center gap-2">
+                      <div class="w-1.5 h-1.5 rounded-full dot-pulse ${t.enabled ? 'bg-emerald-400 text-emerald-400' : 'bg-zinc-600 text-zinc-600'}"></div>
+                      <span class="text-[12px] font-medium ${t.enabled ? 'text-emerald-400' : 'text-zinc-500'}">${t.enabled ? 'Active' : 'Paused'}</span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <span class="text-[12px] text-text-tertiary font-mono">${t.last_check ? relativeTime(t.last_check) : '—'}</span>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <div class="flex items-center justify-end gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button onclick="scanTarget(${t.id})" title="Scan now"
+                        class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-emerald-500/10 text-text-tertiary hover:text-emerald-400 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                      </button>
+                      <button onclick="toggleTarget(${t.id}, ${t.enabled})" title="${t.enabled ? 'Pause' : 'Resume'}"
+                        class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-amber-500/10 text-text-tertiary hover:text-amber-400 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          ${t.enabled
+                            ? '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>'
+                            : '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664zM21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>'}
+                        </svg>
+                      </button>
+                      <button onclick="deleteTarget(${t.id})" title="Delete"
+                        class="w-7 h-7 flex items-center justify-center rounded-md hover:bg-red-500/10 text-text-tertiary hover:text-red-400 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
     }
 
-    // Load patches
+    /* ============================================================
+       PATCHES
+    ============================================================ */
     async function loadPatches() {
       try {
         const response = await fetch(`${API_BASE}/logs/patches`);
@@ -235,29 +532,66 @@
 
     function renderPatches(patches) {
       const container = document.getElementById('patches-list');
-      if (patches.length === 0) {
-        container.innerHTML = '<p class="text-slate-400">No patches detected yet.</p>';
+
+      if (!patches || patches.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state flex flex-col items-center justify-center py-20 rounded-xl">
+            <div class="w-10 h-10 rounded-full bg-surface-3 flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+            </div>
+            <p class="text-[13px] text-text-tertiary mb-1">No patches detected yet</p>
+            <p class="text-[12px] text-text-tertiary/60">Patches appear here when content changes are found</p>
+          </div>`;
         return;
       }
 
-      container.innerHTML = patches.map(patch => `
-        <div class="card p-4 rounded-lg">
-          <div class="flex justify-between items-start mb-2">
-            <h3 class="text-lg font-semibold">Patch #${patch.id}</h3>
-            <span class="text-sm text-slate-400">${new Date(patch.detected_at * 1000).toLocaleString()}</span>
-          </div>
-          <div class="mb-2">
-            <span class="text-sm text-slate-400">Hash: <code class="text-xs">${patch.content_hash.substring(0, 16)}...</code></span>
-          </div>
-          <details class="mt-2">
-            <summary class="cursor-pointer text-blue-400 hover:text-blue-300">View Content</summary>
-            <pre class="mt-2 text-sm"><code>${escapeHtml(patch.markdown_content)}</code></pre>
-          </details>
-        </div>
-      `).join('');
+      container.innerHTML = `
+        <div class="rounded-xl border border-border-subtle overflow-hidden">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-border-subtle bg-surface-1">
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">ID</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Target</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Content Hash</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Detected</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Content</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border-subtle">
+              ${patches.map(p => `
+                <tr class="table-row">
+                  <td class="px-4 py-3.5">
+                    <span class="text-[13px] font-mono text-text-secondary">#${p.id}</span>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <span class="text-[13px] font-mono text-text-secondary">${p.target_id}</span>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <code class="text-[11px] font-mono text-accent-glow bg-blue-500/5 px-2 py-0.5 rounded border border-blue-500/10">${escapeHtml(p.content_hash.substring(0, 16))}</code>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <span class="text-[12px] text-text-tertiary font-mono">${relativeTime(p.detected_at)}</span>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <details>
+                      <summary class="text-[12px] text-blue-400 hover:text-blue-300 cursor-pointer transition-colors font-medium">
+                        View content
+                      </summary>
+                      <pre class="mt-3 p-4 rounded-lg bg-surface-1 border border-border-subtle text-[12px] font-mono text-text-secondary overflow-x-auto max-h-[300px] overflow-y-auto"><code>${escapeHtml(p.markdown_content)}</code></pre>
+                    </details>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
     }
 
-    // Load logs
+    /* ============================================================
+       AGENT LOGS
+    ============================================================ */
     async function loadLogs() {
       try {
         const response = await fetch(`${API_BASE}/logs/agent`);
@@ -270,48 +604,96 @@
 
     function renderLogs(logs) {
       const container = document.getElementById('logs-list');
-      if (logs.length === 0) {
-        container.innerHTML = '<p class="text-slate-400">No agent logs yet.</p>';
+
+      if (!logs || logs.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state flex flex-col items-center justify-center py-20 rounded-xl">
+            <div class="w-10 h-10 rounded-full bg-surface-3 flex items-center justify-center mb-4">
+              <svg class="w-5 h-5 text-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+            </div>
+            <p class="text-[13px] text-text-tertiary mb-1">No agent activity</p>
+            <p class="text-[12px] text-text-tertiary/60">Logs will appear when the agent processes a patch</p>
+          </div>`;
         return;
       }
 
-      container.innerHTML = logs.map(log => `
-        <div class="card p-4 rounded-lg">
-          <div class="flex justify-between items-start mb-2">
-            <h3 class="text-lg font-semibold">${escapeHtml(log.action_type)}</h3>
-            <span class="text-sm text-slate-400">${new Date(log.created_at * 1000).toLocaleString()}</span>
-          </div>
-          <div class="mb-2">
-            <span class="text-sm ${log.status === 'success' ? 'status-enabled' : 'status-disabled'}">
-              ${escapeHtml(log.status)}
-            </span>
-          </div>
-          ${log.tool_calls ? `
-            <details class="mt-2">
-              <summary class="cursor-pointer text-blue-400 hover:text-blue-300">View Tool Calls</summary>
-              <pre class="mt-2 text-sm"><code>${escapeHtml(log.tool_calls)}</code></pre>
-            </details>
-          ` : ''}
-          ${log.result ? `
-            <details class="mt-2">
-              <summary class="cursor-pointer text-blue-400 hover:text-blue-300">View Result</summary>
-              <pre class="mt-2 text-sm"><code>${escapeHtml(log.result)}</code></pre>
-            </details>
-          ` : ''}
-        </div>
-      `).join('');
+      container.innerHTML = `
+        <div class="rounded-xl border border-border-subtle overflow-hidden">
+          <table class="w-full">
+            <thead>
+              <tr class="border-b border-border-subtle bg-surface-1">
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Status</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Action</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Target</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Timestamp</th>
+                <th class="text-left text-[11px] font-medium text-text-tertiary uppercase tracking-wider px-4 py-3">Details</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-border-subtle">
+              ${logs.map(log => `
+                <tr class="table-row">
+                  <td class="px-4 py-3.5">
+                    <div class="flex items-center gap-2">
+                      <div class="w-1.5 h-1.5 rounded-full dot-pulse ${log.status === 'success' ? 'bg-emerald-400 text-emerald-400' : 'bg-red-400 text-red-400'}"></div>
+                      <span class="text-[12px] font-medium ${log.status === 'success' ? 'text-emerald-400' : 'text-red-400'}">${escapeHtml(log.status)}</span>
+                    </div>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-mono font-medium bg-surface-3 text-text-secondary border border-border-subtle">
+                      ${escapeHtml(log.action_type)}
+                    </span>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <span class="text-[13px] font-mono text-text-secondary">${log.target_id}</span>
+                  </td>
+                  <td class="px-4 py-3.5">
+                    <span class="text-[12px] text-text-tertiary font-mono">${relativeTime(log.created_at)}</span>
+                  </td>
+                  <td class="px-4 py-3.5 space-y-1">
+                    ${log.tool_calls ? `
+                      <details>
+                        <summary class="text-[12px] text-blue-400 hover:text-blue-300 cursor-pointer transition-colors font-medium">
+                          Tool calls
+                        </summary>
+                        <pre class="mt-2 p-3 rounded-lg bg-surface-1 border border-border-subtle text-[11px] font-mono text-accent-glow overflow-x-auto max-h-[200px] overflow-y-auto"><code>${escapeHtml(log.tool_calls)}</code></pre>
+                      </details>` : ''}
+                    ${log.result ? `
+                      <details>
+                        <summary class="text-[12px] text-blue-400 hover:text-blue-300 cursor-pointer transition-colors font-medium">
+                          Result
+                        </summary>
+                        <pre class="mt-2 p-3 rounded-lg bg-surface-1 border border-border-subtle text-[11px] font-mono text-text-secondary overflow-x-auto max-h-[200px] overflow-y-auto"><code>${escapeHtml(log.result)}</code></pre>
+                      </details>` : ''}
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>`;
     }
 
-    // Add target modal
+    /* ============================================================
+       MODAL
+    ============================================================ */
     function showAddTargetModal() {
       document.getElementById('add-target-modal').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => document.getElementById('target-name').focus(), 100);
     }
 
     function hideAddTargetModal() {
       document.getElementById('add-target-modal').classList.add('hidden');
+      document.body.style.overflow = '';
       document.getElementById('add-target-form').reset();
+      // Restore default config placeholder
+      document.getElementById('target-config').value = '{\n  "owner": "username",\n  "repo": "repository"\n}';
     }
 
+    /* ============================================================
+       API ACTIONS
+    ============================================================ */
     async function addTarget(event) {
       event.preventDefault();
       const name = document.getElementById('target-name').value;
@@ -336,24 +718,29 @@
         if (response.ok) {
           hideAddTargetModal();
           loadTargets();
+          showToast('Target created successfully', 'success');
         } else {
           const error = await response.json();
-          alert(`Failed to add target: ${error.error}`);
+          showToast(`Failed: ${error.error}`, 'error');
         }
       } catch (error) {
-        alert(`Failed to add target: ${error.message}`);
+        showToast(`Failed: ${error.message}`, 'error');
       }
     }
 
-    // Target actions
     async function scanTarget(id) {
+      showToast('Scanning target…', 'info');
       try {
         const response = await fetch(`${API_BASE}/triggers/scan/${id}`, { method: 'POST' });
         const result = await response.json();
-        alert(result.changed ? 'Patch detected!' : 'No changes detected');
+        if (result.changed) {
+          showToast('Patch detected!', 'success');
+        } else {
+          showToast('No changes detected', 'info');
+        }
         loadTargets();
       } catch (error) {
-        alert(`Failed to scan target: ${error.message}`);
+        showToast(`Scan failed: ${error.message}`, 'error');
       }
     }
 
@@ -362,30 +749,36 @@
       try {
         await fetch(`${API_BASE}/targets/${id}/${endpoint}`, { method: 'POST' });
         loadTargets();
+        showToast(`Target ${currentEnabled ? 'paused' : 'resumed'}`, 'success');
       } catch (error) {
-        alert(`Failed to toggle target: ${error.message}`);
+        showToast(`Failed: ${error.message}`, 'error');
       }
     }
 
     async function deleteTarget(id) {
-      if (!confirm('Are you sure you want to delete this target?')) return;
-
+      if (!confirm('Delete this target? This action cannot be undone.')) return;
       try {
         await fetch(`${API_BASE}/targets/${id}`, { method: 'DELETE' });
         loadTargets();
+        showToast('Target deleted', 'success');
       } catch (error) {
-        alert(`Failed to delete target: ${error.message}`);
+        showToast(`Failed: ${error.message}`, 'error');
       }
     }
 
-    // Utility functions
-    function escapeHtml(text) {
-      const div = document.createElement('div');
-      div.textContent = text;
-      return div.innerHTML;
-    }
+    /* ============================================================
+       KEYBOARD SHORTCUTS
+    ============================================================ */
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('add-target-modal');
+        if (!modal.classList.contains('hidden')) hideAddTargetModal();
+      }
+    });
 
-    // Initialize
+    /* ============================================================
+       INIT
+    ============================================================ */
     loadTargets();
   </script>
 </body>
